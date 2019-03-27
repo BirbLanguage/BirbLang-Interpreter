@@ -6,6 +6,9 @@ class BirbLang:
     def __init__(self, program):
         self.program = program
 
+    def removeAll(self, array, character):
+        return [x for x in array if x != character]
+
     def evaluate(self):
         variables = {}
         data_types = ("string", "int", "float", "boolean", "complex", "list")
@@ -25,6 +28,10 @@ class BirbLang:
                 if "#" in linesplit:
                     del linesplit[linesplit.index("#"):]
 
+                if not linesplit or not self.removeAll(linesplit, " "):
+                    line += 1
+                    continue
+
                 while linesplit[0] == " ":
                     del linesplit[0]
 
@@ -42,10 +49,10 @@ class BirbLang:
                             print(variables[linesplit[1]][int(linesplit[3])])
                         else:
                             raise TypeError(f"type {type(variables[linesplit[1]])} does not support indexing")
-                        
+
                     elif type(ast.literal_eval(linesplit[1])) is list:
                         print(ast.literal_eval(linesplit[1])[int(linesplit[3])])
-                        
+
                     else:
                         raise NameError(f"{linesplit[1]} is not defined")
 
@@ -139,13 +146,26 @@ class BirbLang:
                         else:
                             raise NameError(f"{linesplit[2]} is not defined")
 
+                elif re.match("^[^\s]+\sat\s[0-9]+\sis\snow\s[^\s]+$", code[line]):
+                    if linesplit[0] in variables:
+                        if type(ast.literal_eval(linesplit[5])) is type(variables[linesplit[0]][int(linesplit[2])]):
+                            variables[linesplit[0]][int(linesplit[2])] = ast.literal_eval(linesplit[5])
+                        else:
+                            raise ValueError(
+                                f"{type(variables[linesplit[0]])} cannot be given value of type {type(ast.literal_eval(linesplit[3]))}")
+                    else:
+                        raise NameError(f"{linesplit[0]} is not defined")
+
                 # Changes value of variable (if possible) if the line matches "(variable) is now (value)"
                 elif re.match("^[^\s]+\sis\snow\s[^\s]+$", code[line]):
                     if linesplit[0] in variables:
                         if type(ast.literal_eval(linesplit[3])) is type(variables[linesplit[0]]):
                             variables[linesplit[0]] = ast.literal_eval(linesplit[3])
                         else:
-                            raise ValueError(f"{type(variables[linesplit[0]])} cannot be given value of type {type(ast.literal_eval(linesplit[3]))}")
+                            raise ValueError(
+                                f"{type(variables[linesplit[0]])} cannot be given value of type {type(ast.literal_eval(linesplit[3]))}")
+                    else:
+                        raise NameError(f"{linesplit[0]} is not defined")
 
                 elif re.match("^peck\s[^\s]+\sat\s[0-9]+$", code[line]):
                     if linesplit[1] in variables:
@@ -170,7 +190,8 @@ class BirbLang:
                 elif re.match("^feed\s[^\s]+\s.+\sat\s[0-9]+$", code[line]):
                     if linesplit[1] in variables:
                         if type(variables[linesplit[1]]) is list:
-                            variables[linesplit[1]].insert(int(linesplit[-1]), ast.literal_eval(" ".join(linesplit[2:linesplit.index("at")])))
+                            variables[linesplit[1]].insert(int(linesplit[-1]), ast.literal_eval(
+                                " ".join(linesplit[2:linesplit.index("at")])))
                         else:
                             raise AttributeError(f"feed is not defined for type {type(variables[linesplit[1]])}")
                     else:
@@ -197,9 +218,10 @@ class BirbLang:
 BirbLang_Program = BirbLang("""
 hatch egg
 new birb borb is [5,4,2]
-feed borb "hello world" at 1
+feed borb 3 at 1
 chirp borb at 1
-chirp borb
+borb at 1 is now 7
+chirp borb at 1
 slep
 """)
 BirbLang_Program.evaluate()
