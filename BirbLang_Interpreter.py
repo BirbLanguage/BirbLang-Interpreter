@@ -57,11 +57,11 @@ class BirbLang:
                         raise NameError(f"{linesplit[1]} is not defined")
 
                 # Checks if the line follows the pattern "chirp (some variable)", and will then print out the text
-                elif re.match("^chirp\s[^\s]+$", code[line]):
+                elif re.match("^chirp\s.+$", code[line]):
 
                     # Will try printing out the value if it were a valid data type
                     try:
-                        print(ast.literal_eval(linesplit[1]))
+                        print(ast.literal_eval(" ".join(linesplit[1:])))
 
                     # If it isn't a valid data type, it will try to output it as a variable
                     except ValueError:
@@ -222,6 +222,7 @@ feed borb 3 at 1
 chirp borb at 1
 borb at 1 is now 7
 chirp borb at 1
+chirp "hello world"
 slep
 """)
 BirbLang_Program.evaluate()
