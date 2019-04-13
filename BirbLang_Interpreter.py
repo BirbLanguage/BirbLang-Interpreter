@@ -39,6 +39,31 @@ class BirbLang:
 
         return arr
 
+    # Defines a function which splits up a string using any delimiters included, keeping the delimiter within the list
+    @staticmethod
+    def safesplit2(string, delimiter=None, delimiter2=None):
+        arr = string.split(" ")
+        temp = ""
+        final = []
+        for x in arr:
+            if x != delimiter and x != delimiter2:
+                temp += x + " "
+            else:
+                temp = list(temp)
+                del temp[-1]
+                temp = "".join(temp)
+                final.append(temp)
+                temp = ""
+                if x == delimiter:
+                    final.append(delimiter)
+                else:
+                    final.append(delimiter2)
+        temp = list(temp)
+        del temp[-1]
+        temp = "".join(temp)
+        final.append(temp)
+        return final
+
     # Defines a function which removes every occurrence of a string in an array
     @staticmethod
     def removeall(arr, character):
@@ -137,11 +162,82 @@ class BirbLang:
             break
         return result
 
+    # Defines a function which evaluates a conditional statement to a boolen value (either true of false)
+    @staticmethod
+    def condition(string):
+        # Splits up the condition into each separate conditional to check if multiple exist (eg. if x > 5 and x < 10)
+        arr = BirbLang.safesplit2(string, "and", "or")
+
+        # Splits each conditional into separate words in a list
+        for x in range(len(arr)):
+            arr[x] = arr[x].split(" ")
+
+        # Joins any conditionals that may have the word "or" in them and still need to be evaluated as one
+        while True:
+            i = 1
+            endloop = True
+            # If an out of place isolated "or" is found, it's joined with the elements next to it
+            while i < len(arr):
+                if " ".join(arr[i]) == "or" and arr[i + 1][0] == "just":
+                    arr[i - 1] = arr[i - 1] + arr[i]
+                    arr[i - 1] = arr[i - 1] + arr[i + 1]
+                    del arr[i:i + 2]
+                    endloop = False
+                    break
+                i += 1
+            if endloop: break
+
+        # Checks each individual condition, evaluating them to either true or false
+        for x in range(0, len(arr), 2):
+            if re.match("[0-9]+ is floofier than [0-9]+$", " ".join(arr[x])):
+                if ast.literal_eval(arr[x][0]) > ast.literal_eval(arr[x][4]):
+                    arr[x] = True
+                else:
+                    arr[x] = False
+            elif re.match("[0-9]+ is floofier than or just as floofy as [0-9]+$", " ".join(arr[x])):
+                if ast.literal_eval(arr[x][0]) >= ast.literal_eval(arr[x][9]):
+                    arr[x] = True
+                else:
+                    arr[x] = False
+            elif re.match("[0-9]+ is not as floofy as [0-9]+$", " ".join(arr[x])):
+                if ast.literal_eval(arr[x][0]) < ast.literal_eval(arr[x][6]):
+                    arr[x] = True
+                else:
+                    arr[x] = False
+            elif re.match("[0-9]+ is not as floofy or just as floofy as [0-9]+$", " ".join(arr[x])):
+                if ast.literal_eval(arr[x][0]) <= ast.literal_eval(arr[x][10]):
+                    arr[x] = True
+                else:
+                    arr[x] = False
+            elif re.match("[0-9]+ is as floofy as [0-9]+$", " ".join(arr[x])):
+                if ast.literal_eval(arr[x][0]) == ast.literal_eval(arr[x][5]):
+                    arr[x] = True
+                else:
+                    arr[x] = False
+            elif re.match("[0-9]+ is not as floofy as [0-9]+$", " ".join(arr[x])):
+                if ast.literal_eval(arr[x][0]) == ast.literal_eval(arr[x][6]):
+                    arr[x] = True
+                else:
+                    arr[x] = False
+
+        # Checks whether or not the entire conditional is true (if multiple conditions are found)
+        if len(arr) > 2:
+            while len(arr) > 1:
+                if " ".join(arr[1]) == "and":
+                    arr[0] = arr[0] and arr[2]
+                    del arr[1:3]
+                elif " ".join(arr[1]) == "or":
+                    arr[0] = arr[0] or arr[2]
+                    del arr[1:3]
+        return arr[0]
+
     def evaluate(self):
         variables = {}
         data_types = ("string", "int", "float", "boolean", "complex", "list")
         code = self.program.split("\n")  # Splits code into each individual line
         operations = ["floof", "unfloof", "megafloof", "megaunfloof", "ultrafloof", "ultraunfloof"]
+        inloop = False
+        loop_index = []
 
         # Checks to see if program can be executed and stopped successfully
         if "hatch egg" in code and "slep" in code:
@@ -172,7 +268,7 @@ class BirbLang:
                 linesplit = code[line].split(" ")
 
                 # Outputs element at specific index of array (if possible)
-                if re.match("^chirp .+ at [0-9]+$", code[line]):
+                if re.match("^squawk .+ at [0-9]+$", code[line]):
                     if linesplit[1] in variables:
                         if type(variables[linesplit[1]]) is list:
                             print(variables[linesplit[1]][int(linesplit[3])])
@@ -186,7 +282,7 @@ class BirbLang:
                         raise NameError(f"{linesplit[1]} is not defined")
 
                 # Checks if the line follows the pattern "chirp (some variable)", and will then print out the text
-                elif re.match("^chirp .+$", code[line]):
+                elif re.match("^squawk .+$", code[line]):
 
                     if linesplit[1] in operations:
                         linesplit = BirbLang.safesplit(code[line], " ", "(", ")")
@@ -211,8 +307,49 @@ class BirbLang:
                                 raise NameError(
                                     f"{linesplit[1]} is not defined")  # Raises an error if all other cases failed
 
+                # Outputs element at specific index of array (if possible, and without a newline character)
+                elif re.match("^chirp .+ at [0-9]+$", code[line]):
+                    if linesplit[1] in variables:
+                        if type(variables[linesplit[1]]) is list:
+                            print(variables[linesplit[1]][int(linesplit[3])], end="")
                         else:
-                            raise NameError(f"{linesplit[1]} is not defined")
+                            raise TypeError(
+                                f"type {type(variables[linesplit[1]])} does not support indexing")
+
+                    elif type(ast.literal_eval(linesplit[1])) is list:
+                        print(ast.literal_eval(linesplit[1])[int(linesplit[3])],end="")
+
+                    else:
+                        raise NameError(f"{linesplit[1]} is not defined")
+
+                # Will print out text (without an endline) if the pattern matches "chirp (something)"
+                elif re.match("^chirp .+$", code[line]):
+
+                    if linesplit[1] in operations:
+                        linesplit = BirbLang.safesplit(code[line], " ", "(", ")")
+                        linesplit = BirbLang.removeall(linesplit, " ")
+                        linesplit = BirbLang.removeall(linesplit, "")
+                        for x in linesplit[1:]:
+                            if x in variables:
+                                linesplit[linesplit.index(x)] = str(variables[x])
+                        print(BirbLang.calculate(" ".join(linesplit[1:])),end="")
+
+                    else:
+                        # Will try printing out the value if it were a valid data type
+                        try:
+                            print(ast.literal_eval(" ".join(linesplit[1:])),end="")
+
+                        # If it isn't a valid data type, it will try to output it as a variable
+                        except ValueError:
+                            if linesplit[1] in variables:
+                                print(variables[linesplit[1]][1:-1],end="") if type(
+                                    variables[linesplit[1]]) == "str" else print(variables[linesplit[1]],end="")
+                            else:
+                                # Raises an error if everything else failed
+                                raise NameError(f"{linesplit[1]} is not defined")
+
+                        # else:
+                        #     raise NameError(f"{linesplit[1]} is not defined")
 
                 # Runs if the line is meant to declare a new variable (new birb variable_name is value)
                 elif re.match("^new birb [^ ]+ is .+$", code[line]):
@@ -375,9 +512,57 @@ class BirbLang:
                     else:
                         raise NameError(f"{linesplit[1]} is not defined")
 
+                elif re.match("^[^ ]+ is flying while .+$", code[line]):
+                    if linesplit[0] in variables:
+                        if len(linesplit) > 8:
+                            if linesplit[-4] in operations:
+                                linesplit = BirbLang.safesplit(code[line], " ", "(", ")")
+                                linesplit = BirbLang.removeall(linesplit, " ")
+                                linesplit = BirbLang.removeall(linesplit, "")
+                                for x in linesplit[-4:]:
+                                    if x in variables:
+                                        linesplit[linesplit.index(x)] = str(variables[x])
+                                linesplit[-4] = BirbLang.calculate(" ".join(linesplit[-4:]))
+                                del linesplit[-3:]
+                            elif linesplit[-4] == "it":
+                                linesplit[-4] = str(variables[linesplit[0]])
+
+                        if linesplit[4] in operations:
+                            linesplit = BirbLang.safesplit(code[line], " ", "(", ")")
+                            linesplit = BirbLang.removeall(linesplit, " ")
+                            linesplit = BirbLang.removeall(linesplit, "")
+                            for x in linesplit[4:]:
+                                if x in variables:
+                                    linesplit[linesplit.index(x)] = str(variables[x])
+                            linesplit[4] = BirbLang.calculate(" ".join(linesplit[4:]))
+                            del linesplit[5:9]
+                        elif linesplit[4] == "it":
+                            linesplit[4] = str(variables[linesplit[0]])
+
+                        if BirbLang.condition(" ".join(linesplit[4:])):
+                            inloop = True
+                            loop_index.append(line)
+                        else:
+                            inloop = False
+                            i = 1
+                            while i != 0:
+                                line += 1
+                                if re.match("^[^ ]+ is flying while .+$", code[line]):
+                                    i += 1
+                                elif re.match("^stop flying", code[line]):
+                                    i -= 1
+                            continue
+                    else:
+                        raise NameError(f"{linesplit[0]} is not defined")
+
+                elif code[line] == "stop flying":
+                    if inloop:
+                        line = loop_index[-1]
+                        continue
+
                 # Raises an error if the line doesn't match any of the above cases
                 else:
-                    raise SyntaxError(f"{code[line]} is not defined")
+                    raise SyntaxError(f"\"{code[line]}\" is not defined")
 
                 line += 1
         return 0
@@ -385,9 +570,17 @@ class BirbLang:
 
 BirbLang_Program = BirbLang("""
 hatch egg
-new birb test is 5
-test is now floof it by 2
-chirp test
+new birb factorial is mimic
+breed of factorial is now int
+new birb evaluate is 1
+chirp "The factorial of "
+chirp factorial
+chirp " is "
+factorial is flying while it is floofier than 1
+    evaluate is now megafloof it by factorial
+    unfloof factorial
+stop flying
+chirp evaluate
 slep
 """)
 BirbLang_Program.evaluate()
