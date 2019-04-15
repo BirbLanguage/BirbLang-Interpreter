@@ -185,7 +185,8 @@ class BirbLang:
                     endloop = False
                     break
                 i += 1
-            if endloop: break
+            if endloop:
+                break
 
         # Checks each individual condition, evaluating them to either true or false
         for x in range(0, len(arr), 2):
@@ -236,7 +237,7 @@ class BirbLang:
         data_types = ("string", "int", "float", "boolean", "complex", "list")
         code = self.program.split("\n")  # Splits code into each individual line
         operations = ["floof", "unfloof", "megafloof", "megaunfloof", "ultrafloof", "ultraunfloof"]
-        inloop = False
+        inloop = []
         loop_index = []
 
         # Checks to see if program can be executed and stopped successfully
@@ -317,7 +318,7 @@ class BirbLang:
                                 f"type {type(variables[linesplit[1]])} does not support indexing")
 
                     elif type(ast.literal_eval(linesplit[1])) is list:
-                        print(ast.literal_eval(linesplit[1])[int(linesplit[3])],end="")
+                        print(ast.literal_eval(linesplit[1])[int(linesplit[3])], end="")
 
                     else:
                         raise NameError(f"{linesplit[1]} is not defined")
@@ -332,18 +333,18 @@ class BirbLang:
                         for x in linesplit[1:]:
                             if x in variables:
                                 linesplit[linesplit.index(x)] = str(variables[x])
-                        print(BirbLang.calculate(" ".join(linesplit[1:])),end="")
+                        print(BirbLang.calculate(" ".join(linesplit[1:])), end="")
 
                     else:
                         # Will try printing out the value if it were a valid data type
                         try:
-                            print(ast.literal_eval(" ".join(linesplit[1:])),end="")
+                            print(ast.literal_eval(" ".join(linesplit[1:])), end="")
 
                         # If it isn't a valid data type, it will try to output it as a variable
                         except ValueError:
                             if linesplit[1] in variables:
-                                print(variables[linesplit[1]][1:-1],end="") if type(
-                                    variables[linesplit[1]]) == "str" else print(variables[linesplit[1]],end="")
+                                print(variables[linesplit[1]][1:-1], end="") if type(
+                                    variables[linesplit[1]]) == "str" else print(variables[linesplit[1]], end="")
                             else:
                                 # Raises an error if everything else failed
                                 raise NameError(f"{linesplit[1]} is not defined")
@@ -512,38 +513,20 @@ class BirbLang:
                     else:
                         raise NameError(f"{linesplit[1]} is not defined")
 
+                # Starts or ends a while statement
                 elif re.match("^[^ ]+ is flying while .+$", code[line]):
                     if linesplit[0] in variables:
-                        if len(linesplit) > 8:
-                            if linesplit[-4] in operations:
-                                linesplit = BirbLang.safesplit(code[line], " ", "(", ")")
-                                linesplit = BirbLang.removeall(linesplit, " ")
-                                linesplit = BirbLang.removeall(linesplit, "")
-                                for x in linesplit[-4:]:
-                                    if x in variables:
-                                        linesplit[linesplit.index(x)] = str(variables[x])
-                                linesplit[-4] = BirbLang.calculate(" ".join(linesplit[-4:]))
-                                del linesplit[-3:]
-                            elif linesplit[-4] == "it":
-                                linesplit[-4] = str(variables[linesplit[0]])
-
-                        if linesplit[4] in operations:
-                            linesplit = BirbLang.safesplit(code[line], " ", "(", ")")
-                            linesplit = BirbLang.removeall(linesplit, " ")
-                            linesplit = BirbLang.removeall(linesplit, "")
-                            for x in linesplit[4:]:
-                                if x in variables:
-                                    linesplit[linesplit.index(x)] = str(variables[x])
-                            linesplit[4] = BirbLang.calculate(" ".join(linesplit[4:]))
-                            del linesplit[5:9]
-                        elif linesplit[4] == "it":
+                        if linesplit[4] == "it":
                             linesplit[4] = str(variables[linesplit[0]])
-
+                        if linesplit[-1] == "it":
+                            linesplit[-1] = str(variables[linesplit[0]])
                         if BirbLang.condition(" ".join(linesplit[4:])):
-                            inloop = True
-                            loop_index.append(line)
+                            if line not in loop_index:
+                                loop_index.append(line)
+                            line += 1
+                            continue
                         else:
-                            inloop = False
+                            del loop_index[-1]
                             i = 1
                             while i != 0:
                                 line += 1
@@ -551,12 +534,13 @@ class BirbLang:
                                     i += 1
                                 elif re.match("^stop flying", code[line]):
                                     i -= 1
+                            line += 1
                             continue
                     else:
                         raise NameError(f"{linesplit[0]} is not defined")
 
                 elif code[line] == "stop flying":
-                    if inloop:
+                    if loop_index:
                         line = loop_index[-1]
                         continue
 
@@ -572,15 +556,12 @@ BirbLang_Program = BirbLang("""
 hatch egg
 new birb factorial is mimic
 breed of factorial is now int
-new birb evaluate is 1
-chirp "The factorial of "
-chirp factorial
-chirp " is "
+new birb result is 1
 factorial is flying while it is floofier than 1
-    evaluate is now megafloof it by factorial
+    result is now megafloof it by factorial
     unfloof factorial
 stop flying
-chirp evaluate
+chirp result
 slep
 """)
 BirbLang_Program.evaluate()
