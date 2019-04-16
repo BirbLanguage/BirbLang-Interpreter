@@ -1,0 +1,63 @@
+import tkinter as tk
+
+
+def count(arr, character):
+    number = 0
+    for x in arr:
+        if x == character:
+            number += 1
+        else:
+            continue
+    return number
+
+
+def indexofoccurrence(arr, character, occurence):
+    return [x for x in range(0, len(arr)) if arr[x] == character][occurence]
+
+
+line_counter = 1
+def new_line(self):
+    global line_counter
+    line_counter += 1
+    set_text = line_number.cget("text") + f"\n{line_counter} |"
+    line_number.configure(text=set_text)
+
+
+def del_line(self):
+    global line_counter
+    set_text = list(line_number.cget("text"))
+    if (user_code.get("1.0","end").split("\n"))[-2] == "":
+        if line_counter > 1:
+            line_counter -= 1
+            del set_text[indexofoccurrence(set_text,"\n",-1):]
+            set_text = "".join(set_text)
+            line_number.configure(text=set_text)
+
+
+root = tk.Tk()
+root.geometry("500x500")
+root_width = root.winfo_width()
+root_height = root.winfo_height()
+top = tk.Frame(root, width=root_width)
+top.pack(pady=15)
+left = tk.Frame(root)
+left.pack(side=tk.LEFT, fill="both", expand=True)
+right = tk.Frame(root)
+right.pack(side=tk.RIGHT, fill="both", expand=True)
+bottom = tk.Frame(root)
+bottom.pack(side=tk.BOTTOM, fill="both", expand=True)
+scrollbar = tk.Scrollbar(left)
+scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+line_number = tk.Message(left, text="1 | ", anchor="nw")
+line_number.pack(side=tk.LEFT, fill="both")
+user_code = tk.Text(left, yscrollcommand=scrollbar.set)
+user_code.configure(font=("Courier New", 9, "normal"))
+user_code.pack(side=tk.TOP, fill=tk.X, padx=7, pady=4)
+user_code.bind("<Return>", new_line)
+user_code.bind("<BackSpace>", del_line)
+user_code.bind("<Delete>", del_line)
+scrollbar.config(command=user_code.yview)
+output = tk.Message(right)
+output.pack(fill=tk.X, )
+root.mainloop()
