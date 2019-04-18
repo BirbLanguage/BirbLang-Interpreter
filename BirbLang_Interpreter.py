@@ -239,6 +239,7 @@ class BirbLang:
         operations = ["floof", "unfloof", "megafloof", "megaunfloof", "ultrafloof", "ultraunfloof"]
         inloop = []
         loop_index = []
+        in_condition = []
 
         # Checks to see if program can be executed and stopped successfully
         if "hatch egg" in code and "slep" in code:
@@ -436,6 +437,7 @@ class BirbLang:
                         else:
                             raise NameError(f"{linesplit[2]} is not defined")
 
+                # Sets the value of an element within an array
                 elif re.match("^[^ ]+ at [0-9]+ is now .+$", code[line]):
                     if linesplit[0] in variables:
                         if linesplit[5] in operations:
@@ -473,6 +475,7 @@ class BirbLang:
                     else:
                         raise NameError(f"{linesplit[0]} is not defined")
 
+                # Removes an element within a list at a specific index
                 elif re.match("^peck [^ ]+ at [0-9]+$", code[line]):
                     if linesplit[1] in variables:
                         if type(variables[linesplit[1]]) is list:
@@ -516,15 +519,20 @@ class BirbLang:
                 # Starts or ends a while statement
                 elif re.match("^[^ ]+ is flying while .+$", code[line]):
                     if linesplit[0] in variables:
+                        # Replaces any instance of "it" with the variable being looped
                         if linesplit[4] == "it":
                             linesplit[4] = str(variables[linesplit[0]])
                         if linesplit[-1] == "it":
                             linesplit[-1] = str(variables[linesplit[0]])
+
+                        # Checks the condition (to decide whether or not to run)
                         if BirbLang.condition(" ".join(linesplit[4:])):
                             if line not in loop_index:
                                 loop_index.append(line)
                             line += 1
                             continue
+
+                        # Finds the loop's corresponding "stop flying" line and skips over to that line
                         else:
                             del loop_index[-1]
                             i = 1
@@ -539,10 +547,68 @@ class BirbLang:
                     else:
                         raise NameError(f"{linesplit[0]} is not defined")
 
+                # Loops back to the corresponding while loop if the code is still in a loop
                 elif code[line] == "stop flying":
                     if loop_index:
                         line = loop_index[-1]
                         continue
+
+                elif re.match("^[^ ]+ desires seed$", code[line]):
+                    if linesplit[0] in variables:
+                        linesplit[0] = str(variables[linesplit[0]])
+
+                    try:
+                        in_condition.append(ast.literal_eval(linesplit[0]))
+
+                    except ValueError:
+                        raise ValueError(f"{linesplit[0]} is not defined")
+
+                elif re.match("^eat seed if .+$", code[line]):
+                    if in_condition:
+                        for x in range(3, len(linesplit)):
+                            if linesplit[x] == "it":
+                                linesplit[x] = str(in_condition[-1])
+                            elif linesplit[x] in variables:
+                                linesplit[x] = str(variables[linesplit[x]])
+                        if self.condition(" ".join(linesplit[3:])):
+                            line += 1
+                            del in_condition[-1]
+                            continue
+                        else:
+                            while True:
+                                line += 1
+                                if re.match("^[^ ]+ no longer desires seed$", code[line]):
+                                    line += 1
+                                    break
+                                elif re.match("^eat seed if .+$", code[line]):
+                                    break
+                                elif code[line] == "throw seed away":
+                                    line += 1
+                                    break
+                            continue
+                    else:
+                        while True:
+                            line += 1
+                            if re.match("^[^ ]+ no longer desires seed$", code[line]):
+                                break
+                        continue
+
+                elif code[line] == "throw seed away":
+                    if in_condition:
+                        line += 1
+                        del in_condition[-1]
+                        continue
+                    else:
+                        while True:
+                            line += 1
+                            if re.match("^[^ ]+ no longer desires seed", code[line]):
+                                line += 1
+                                break
+                        continue
+
+                elif re.match("^[^ ]+ no longer desires seed$", code[line]):
+                    line += 1
+                    continue
 
                 # Raises an error if the line doesn't match any of the above cases
                 else:
@@ -554,14 +620,18 @@ class BirbLang:
 
 BirbLang_Program = BirbLang("""
 hatch egg
-new birb factorial is mimic
-breed of factorial is now int
-new birb result is 1
-factorial is flying while it is floofier than 1
-    result is now megafloof it by factorial
-    unfloof factorial
-stop flying
-chirp result
+new birb test is 1
+test desires seed
+eat seed if it is floofier than 2
+    test desires seed
+    eat seed if it is not as floofy as 7
+        chirp test
+        squawk " is in between 2 and 7"
+    test no longer desires seed
+throw seed away
+    chirp test
+    squawk " is not in between 2 and 7"
+test no longer desires seed
 slep
 """)
 BirbLang_Program.evaluate()
