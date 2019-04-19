@@ -21,7 +21,7 @@ scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 # Creates the text boxes, output window, console window, and input box
 line_number = tk.Message(left, text="1 | ", anchor="nw", bg="#333", fg="#bbb")
 line_number.pack(side=tk.LEFT, fill=tk.Y, pady=15, padx=2)
-user_code = tk.Text(left, yscrollcommand=scrollbar.set, bg="#89a")
+user_code = tk.Text(left, bg="#89a")
 user_code.configure(font=("Courier New", 9, "normal"))
 user_code.pack(side=tk.TOP, fill="both", expand=True, padx=15, pady=20)
 evaluate = tk.Button(left, text="Evaluate", width=7)
@@ -29,11 +29,14 @@ evaluate.pack(side=tk.BOTTOM, pady=7)
 scrollbar.config(command=user_code.yview)
 output = tk.Message(right, relief="raised", text="Output:", borderwidth=7, anchor="nw", width=400, bg="#89a", fg="#000")
 output.pack(fill="both", expand=True)
-input_console = tk.Entry(right, relief="raised", borderwidth=7, width=20, bg="#789", fg="#000")
-input_console.insert(tk.INSERT, "Input")
-input_console.pack(fill=tk.X, ipady=7)
+input_console1 = tk.Entry(right, relief="raised", borderwidth=7, width=20, bg="#789", fg="#000")
+input_console1.insert(tk.INSERT, "Input")
+input_console1.pack(fill=tk.X, ipady=7)
 console = tk.Message(right, relief="raised", text="Console", borderwidth=7, anchor="nw", width=400, bg="#789", fg="#000")
 console.pack(side=tk.BOTTOM, fill="both", ipady=50)
+
+input_counter = 2
+input_consoles = [input_console1]
 
 
 class BirbLang:
@@ -53,9 +56,9 @@ class BirbLang:
     @staticmethod
     def stop_input(self):
         global return_text
-        input_console.grab_release()
-        return_text = "".join(list(input_console.get())[4:])
-        input_console.destroy()
+        input_consoles[-1].grab_release()
+        return_text = "".join(list(input_consoles[-1].get())[4:])
+        input_consoles[-1].destroy()
 
     # Honestly just fuck this god damn function I spent way too long on it but it works god dammit and I'm happy
     # Basically what it does is take the input console, replace its text with the >>> prompt, and essentially redraw
@@ -64,15 +67,15 @@ class BirbLang:
     @staticmethod
     def get_input(self):
         global return_text
-        input_console.delete(0, tk.END)
-        input_console.insert(tk.INSERT, ">>> ")
-        input_console.bind("<Return>", BirbLang.stop_input)
-        input_console.grab_set()
+        input_consoles[-1].delete(0, tk.END)
+        input_consoles[-1].insert(tk.INSERT, ">>> ")
+        input_consoles[-1].bind("<Return>", BirbLang.stop_input)
+        input_consoles[-1].grab_set()
         try:
-            input_console.wm_transient()
+            input_consoles[-1].wm_transient()
         except AttributeError:
             eoia = 0  # Idunno there didn't need to be anything here, this just stops the program from raising an error
-        root.wait_window(input_console)
+        root.wait_window(input_consoles[-1])
         return return_text
 
     # Raises an error when called (outputs the error into the console)
@@ -440,10 +443,18 @@ class BirbLang:
                     else:
                         if linesplit[4] == "mimic":  # Handles case where the line asks for user input
                             variables[linesplit[2]] = self.get_input(">>> ")
-                            input_console = tk.Entry(right, relief="raised", borderwidth=7, width=20, bg="#789",
-                                                     fg="#000")
-                            input_console.insert(tk.INSERT, "Input")
-                            input_console.pack(fill=tk.X, ipady=7)
+                            global input_counter
+                            # This is probably the part I'm proudest about
+                            # Because destroying a tkinter widget removes all other references to that widget, and
+                            # therefore you cannot pack it again (and I'm pretty sure creating it with the same name
+                            # would break it), these few lines dynamically create new variables, each being the new
+                            # input console once the old one is destroyed. This allows for the user to enter stuff
+                            # into the console numerous times, without everything breaking as a result
+                            exec(f"input_console{input_counter}=tk.Entry(right, relief='raised', borderwidth=7, width=20, bg='#789', fg='#000')")
+                            exec(f"input_consoles.append(input_console{input_counter})")
+                            input_consoles[-1].insert(tk.INSERT, "Input")
+                            input_consoles[-1].pack(fill=tk.X, ipady=7)
+                            input_counter += 1
                         else:
                             try:
                                 # Converts string to its appropriate data type
@@ -540,10 +551,12 @@ class BirbLang:
 
                         elif linesplit[5] == "mimic":
                             variables[linesplit[0]][int(linesplit[2])] = self.get_input(">>> ")
-                            input_console = tk.Entry(right, relief="raised", borderwidth=7, width=20, bg="#789",
-                                                     fg="#000")
-                            input_console.insert(tk.INSERT, "Input")
-                            input_console.pack(fill=tk.X, ipady=7)
+                            exec(
+                                f"input_console{input_counter}=tk.Entry(right, relief='raised', borderwidth=7, width=20, bg='#789', fg='#000')")
+                            exec(f"input_consoles.append(input_console{input_counter})")
+                            input_consoles[-1].insert(tk.INSERT, "Input")
+                            input_consoles[-1].pack(fill=tk.X, ipady=7)
+                            input_counter += 1
 
                         else:
                             variables[linesplit[0]][int(linesplit[2])] = ast.literal_eval(linesplit[5])
@@ -567,10 +580,12 @@ class BirbLang:
 
                         elif linesplit[3] == "mimic":
                             variables[linesplit[0]] = self.get_input(">>> ")
-                            input_console = tk.Entry(right, relief="raised", borderwidth=7, width=20, bg="#789",
-                                                     fg="#000")
-                            input_console.insert(tk.INSERT, "Input")
-                            input_console.pack(fill=tk.X, ipady=7)
+                            exec(
+                                f"input_console{input_counter}=tk.Entry(right, relief='raised', borderwidth=7, width=20, bg='#789', fg='#000')")
+                            exec(f"input_consoles.append(input_console{input_counter})")
+                            input_consoles[-1].insert(tk.INSERT, "Input")
+                            input_consoles[-1].pack(fill=tk.X, ipady=7)
+                            input_counter += 1
 
                         else:
                             variables[linesplit[0]] = ast.literal_eval(" ".join(linesplit[3:]))
