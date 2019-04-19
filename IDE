@@ -2,6 +2,39 @@ import tkinter as tk
 import re
 import ast
 
+# Defines the framework of the screen, including the window itself and the different segments of the screen
+root = tk.Tk()
+root.title("BirbLang Interpreter")
+root.geometry("500x500")
+root.configure(background="#333")
+top = tk.Frame(root, bg="#333")
+top.pack(fill="both")
+left = tk.Frame(root, bg="#333")
+left.pack(side=tk.LEFT, fill="both", expand=True)
+right = tk.Frame(root)
+right.pack(side=tk.RIGHT, fill="both", expand=True)
+bottom = tk.Frame(root)
+bottom.pack(side=tk.BOTTOM, fill="both", expand=True)
+scrollbar = tk.Scrollbar(left)
+scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+# Creates the text boxes, output window, console window, and input box
+line_number = tk.Message(left, text="1 | ", anchor="nw", bg="#333", fg="#bbb")
+line_number.pack(side=tk.LEFT, fill=tk.Y, pady=15, padx=2)
+user_code = tk.Text(left, yscrollcommand=scrollbar.set, bg="#89a")
+user_code.configure(font=("Courier New", 9, "normal"))
+user_code.pack(side=tk.TOP, fill="both", expand=True, padx=15, pady=20)
+evaluate = tk.Button(left, text="Evaluate", width=7)
+evaluate.pack(side=tk.BOTTOM, pady=7)
+scrollbar.config(command=user_code.yview)
+output = tk.Message(right, relief="raised", text="Output:", borderwidth=7, anchor="nw", width=400, bg="#89a", fg="#000")
+output.pack(fill="both", expand=True)
+input_console = tk.Entry(right, relief="raised", borderwidth=7, width=20, bg="#789", fg="#000")
+input_console.insert(tk.INSERT, "Input")
+input_console.pack(fill=tk.X, ipady=7)
+console = tk.Message(right, relief="raised", text="Console", borderwidth=7, anchor="nw", width=400, bg="#789", fg="#000")
+console.pack(side=tk.BOTTOM, fill="both", ipady=50)
+
 
 class BirbLang:
     def __init__(self, program):
@@ -15,15 +48,32 @@ class BirbLang:
         else: set_text = output.cget("text") + str(string)
         output.configure(text=set_text)
 
+    return_text = ""
+    # Destroys the input_console as a new window, allowing for the main code to continue and the input to be received
+    @staticmethod
+    def stop_input(self):
+        global return_text
+        input_console.grab_release()
+        return_text = "".join(list(input_console.get())[4:])
+        input_console.destroy()
+
+    # Honestly just fuck this god damn function I spent way too long on it but it works god dammit and I'm happy
+    # Basically what it does is take the input console, replace its text with the >>> prompt, and essentially redraw
+    # the console as a seperate window above the current one. From there, the program will wait for it to be destroyed,
+    # and will only continue once the return key is pressed within the console
     @staticmethod
     def get_input(self):
-        if input_console.get("1.0", "end-1c") != "Input":
-            print(list(input_console.get("1.0", "end-1c")))
-            return input_console.get("5.0", "end")
-        else:
-            input_console.delete("1.0", "end")
-            input_console.insert(tk.INSERT, ">>> ")
-            input_console.bind("<Return>", BirbLang.get_input)
+        global return_text
+        input_console.delete(0, tk.END)
+        input_console.insert(tk.INSERT, ">>> ")
+        input_console.bind("<Return>", BirbLang.stop_input)
+        input_console.grab_set()
+        try:
+            input_console.wm_transient()
+        except AttributeError:
+            eoia = 0  # Idunno there didn't need to be anything here, this just stops the program from raising an error
+        root.wait_window(input_console)
+        return return_text
 
     # Raises an error when called (outputs the error into the console)
     @staticmethod
@@ -388,15 +438,19 @@ class BirbLang:
                         variables[linesplit[2]] = BirbLang.calculate(" ".join((linesplit[4:])))
 
                     else:
-                        try:
-                            # Converts string to its appropriate data type
-                            variables[linesplit[2]] = ast.literal_eval(linesplit[4])
-                        except ValueError:
-                            if linesplit[4] == "mimic":  # Handles case where the line asks for user input
-                                variables[linesplit[2]] = self.get_input(">>> ")
-                            else:
-                                self.raise_error(line, f"ValueError:\n{variables[linesplit[2]]} is not a valid data type")
-                                return 1
+                        if linesplit[4] == "mimic":  # Handles case where the line asks for user input
+                            variables[linesplit[2]] = self.get_input(">>> ")
+                            input_console = tk.Entry(right, relief="raised", borderwidth=7, width=20, bg="#789",
+                                                     fg="#000")
+                            input_console.insert(tk.INSERT, "Input")
+                            input_console.pack(fill=tk.X, ipady=7)
+                        else:
+                            try:
+                                # Converts string to its appropriate data type
+                                variables[linesplit[2]] = ast.literal_eval(linesplit[4])
+                            except ValueError:
+                                    self.raise_error(line, f"ValueError:\n{variables[linesplit[2]]} is not a valid data type")
+                                    return 1
 
                 # Checks if the line is "floof (variable)," and will increment it if possible
                 elif re.match("^floof [^ ]+$", code[line]):
@@ -483,6 +537,14 @@ class BirbLang:
                                     linesplit[linesplit.index(x)] = str(variables[linesplit[0]][int(linesplit[2])])
                             linesplit[5] = BirbLang.calculate(" ".join((linesplit[5:])))
                             variables[linesplit[0]][int(linesplit[2])] = linesplit[5]
+
+                        elif linesplit[5] == "mimic":
+                            variables[linesplit[0]][int(linesplit[2])] = self.get_input(">>> ")
+                            input_console = tk.Entry(right, relief="raised", borderwidth=7, width=20, bg="#789",
+                                                     fg="#000")
+                            input_console.insert(tk.INSERT, "Input")
+                            input_console.pack(fill=tk.X, ipady=7)
+
                         else:
                             variables[linesplit[0]][int(linesplit[2])] = ast.literal_eval(linesplit[5])
                     else:
@@ -502,6 +564,13 @@ class BirbLang:
                                 elif x == "it":
                                     linesplit[linesplit.index(x)] = str(variables[linesplit[0]])
                             variables[linesplit[0]] = BirbLang.calculate(" ".join(linesplit[3:]))
+
+                        elif linesplit[3] == "mimic":
+                            variables[linesplit[0]] = self.get_input(">>> ")
+                            input_console = tk.Entry(right, relief="raised", borderwidth=7, width=20, bg="#789",
+                                                     fg="#000")
+                            input_console.insert(tk.INSERT, "Input")
+                            input_console.pack(fill=tk.X, ipady=7)
 
                         else:
                             variables[linesplit[0]] = ast.literal_eval(" ".join(linesplit[3:]))
@@ -690,38 +759,6 @@ def line_check(self):
             set_text = "1 | "
         line_number.configure(text="".join(set_text))
 
-
-# Defines the framework of the screen, including the window itself and the different segments of the screen
-root = tk.Tk()
-root.title("BirbLang Interpreter")
-root.geometry("500x500")
-root.configure(background="#333")
-top = tk.Frame(root, bg="#333")
-top.pack(fill="both")
-left = tk.Frame(root, bg="#333")
-left.pack(side=tk.LEFT, fill="both", expand=True)
-right = tk.Frame(root)
-right.pack(side=tk.RIGHT, fill="both", expand=True)
-bottom = tk.Frame(root)
-bottom.pack(side=tk.BOTTOM, fill="both", expand=True)
-scrollbar = tk.Scrollbar(left)
-scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-# Creates the text boxes, output window, console window, and input box
-line_number = tk.Message(left, text="1 | ", anchor="nw", bg="#333", fg="#bbb")
-line_number.pack(side=tk.LEFT, fill=tk.Y, pady=15, padx=2)
-user_code = tk.Text(left, yscrollcommand=scrollbar.set, bg="#89a")
-user_code.configure(font=("Courier New", 9, "normal"))
-user_code.pack(side=tk.TOP, fill="both", expand=True, padx=15, pady=20)
 user_code.bind("<KeyRelease>", line_check)
-evaluate = tk.Button(left, text="Evaluate", width=7, command=run)
-evaluate.pack(side=tk.BOTTOM, pady=7)
-scrollbar.config(command=user_code.yview)
-output = tk.Message(right, relief="raised", text="Output:", borderwidth=7, anchor="nw", width=100, bg="#89a", fg="#000")
-output.pack(fill="both", expand=True)
-input_console = tk.Text(right, relief="raised", borderwidth=7, width=20, height=3, bg="#789", fg="#000")
-input_console.insert(tk.INSERT, "Input")
-input_console.pack(fill=tk.X, ipady=15)
-console = tk.Message(right, relief="raised", text="Console", borderwidth=7, anchor="nw", width=400, bg="#789", fg="#000")
-console.pack(side=tk.BOTTOM, fill="both", ipady=50)
+evaluate.configure(command=run)
 root.mainloop()  # Runs the tkinter code
