@@ -167,6 +167,7 @@ class BirbLang:
 
         # Defines lambda functions which actually calculate the equation (based on the operation)
         EXPONENT = lambda x: x[1] ** x[3]
+        ROOT = lambda x: x[1] ** (1.0/x[3])
         MULTIPLICATION = lambda x: x[1] * x[3]
         DIVISION = lambda x: x[1] / x[3]
         ADDITION = lambda x: x[1] + x[3] if len(x) > 2 else x[1] + 1
@@ -211,8 +212,8 @@ class BirbLang:
                 del temp[0][1:]
 
             # Checks if the operator being evaluated is an exponent
-            if operations[4] in temp[1]:
-                calculation = EXPONENT(temp[1][0:])  # Calculates it
+            if operations[4] in temp[1] or operations[5] in temp[1]:
+                calculation = EXPONENT(temp[1][0:]) if temp[1][0] == operations[4] else ROOT(temp[1][0:]) # Calculates it
                 result = calculation  # Sets the result variable to be the calculation (in case it's the final answer)
                 temp[1] = []
                 temp[0][idunnoIllRenameLater] = calculation  # Places the calculation within the equation
@@ -286,12 +287,12 @@ class BirbLang:
                     arr[x] = True
                 else:
                     arr[x] = False
-            elif re.match("[0-9.]+ is as floofy as [0-9.]+$", " ".join(arr[x])):
+            elif re.match("[^ ]+ is as floofy as [^ ]+$", " ".join(arr[x])):
                 if ast.literal_eval(arr[x][0]) == ast.literal_eval(arr[x][5]):
                     arr[x] = True
                 else:
                     arr[x] = False
-            elif re.match("[0-9.]+ is not as floofy as [0-9.]+$", " ".join(arr[x])):
+            elif re.match("[^ ]+ is not as floofy as [^ ]+$", " ".join(arr[x])):
                 if ast.literal_eval(arr[x][0]) == ast.literal_eval(arr[x][6]):
                     arr[x] = True
                 else:
@@ -528,11 +529,11 @@ class BirbLang:
                 # Outputs the data type of a variables/value if the line matches "breed of (variable/value)"
                 elif re.match("^breed of [^ ]+$", code[line]):
                     try:
-                        self.print_to_screen(type(ast.literal_eval(linesplit[2])))
+                        self.print_to_screen(str(type(ast.literal_eval(linesplit[2]))) + "\n")
 
                     except ValueError:
                         if linesplit[2] in variables:
-                            self.print_to_screen(type(variables[linesplit[2]]))
+                            self.print_to_screen(str(type(variables[linesplit[2]])) + "\n")
                         else:
                             self.raise_error(line, f"NameError:\n\"{linesplit[2]}\" is not defined")
                             return 1
