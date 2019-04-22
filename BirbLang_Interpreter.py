@@ -90,6 +90,7 @@ class BirbLang:
 
         # Defines lambda functions which actually calculate the equation (based on the operation)
         EXPONENT = lambda x: x[1] ** x[3]
+        ROOT = lambda x: x[1] ** (1.0/x[3])
         MULTIPLICATION = lambda x: x[1] * x[3]
         DIVISION = lambda x: x[1] / x[3]
         ADDITION = lambda x: x[1] + x[3] if len(x) > 2 else x[1] + 1
@@ -134,8 +135,8 @@ class BirbLang:
                 del temp[0][1:]
 
             # Checks if the operator being evaluated is an exponent
-            if operations[4] in temp[1]:
-                calculation = EXPONENT(temp[1][0:])  # Calculates it
+            if operations[4] in temp[1] or operations[5] in temp[1]:
+                calculation = EXPONENT(temp[1][0:]) if temp[1][0] == operations[4] else ROOT(temp[1][0:]) # Calculates it
                 result = calculation  # Sets the result variable to be the calculation (in case it's the final answer)
                 temp[1] = []
                 temp[0][idunnoIllRenameLater] = calculation  # Places the calculation within the equation
@@ -263,7 +264,6 @@ class BirbLang:
 
                 while linesplit[-1] == " " or linesplit[0] == "\t":
                     del linesplit[-1]
-
 
 
                 code[line] = "".join(linesplit)
@@ -688,28 +688,7 @@ class BirbLang:
 
 BirbLang_Program = BirbLang("""
 hatch egg
-new birb num is mimic
-breed of num is now float
-new birb counter is 0
-
-chirp num
-chirp " = "
-
-num is flying while it is not as floofy as 1.0 or it is floofier than or just as floofy as 10.0
-    num desires seed
-    eat seed if num is not as floofy as 1.0
-	num is now megafloof it by 10
-	unfloof counter
-    eat seed if num is floofier than or just as floofy as 10.0
-	num is now megaunfloof it by 10
-	floof counter
-    num no longer desires seed
-stop flying
-
-chirp num
-chirp " * 10^"
-chirp counter
-
+squawk ultraunfloof 16 by 2
 slep
 """)
 BirbLang_Program.evaluate()
