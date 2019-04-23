@@ -293,7 +293,7 @@ class BirbLang:
                 else:
                     arr[x] = False
             elif re.match("[^ ]+ is not as floofy as [^ ]+$", " ".join(arr[x])):
-                if ast.literal_eval(arr[x][0]) == ast.literal_eval(arr[x][6]):
+                if ast.literal_eval(arr[x][0]) != ast.literal_eval(arr[x][6]):
                     arr[x] = True
                 else:
                     arr[x] = False
@@ -346,6 +346,21 @@ class BirbLang:
 
                 linesplit = code[line].split(" ")
 
+                for x in range(0, len(linesplit)-2):
+                    if linesplit[x] in variables:
+                        if type(variables[linesplit[x]]) is list and linesplit[x+1] == "at":
+                            if linesplit[x+2] in variables:
+                                if type(variables[linesplit[x+2]]) is int:
+                                    linesplit[x+2] = variables[linesplit[x+2]]
+                                else:
+                                    self.raise_error(line, f"ValueError: Cannot find element at index {linesplit[x+2]}")
+                                    return 1
+                            try:
+                                linesplit[x] = variables[linesplit[x]][int(linesplit[x+2])]
+                                del linesplit[x+1:x+3]
+                            except IndexError:
+                                self.raise_error(line, f"IndexError: Index out of range")
+
                 # Outputs element at specific index of array (if possible)
                 if re.match("^squawk .+ at [0-9.]+$", code[line]):
                     if linesplit[1] in variables:
@@ -374,6 +389,12 @@ class BirbLang:
                             if x in variables:
                                 linesplit[linesplit.index(x)] = str(variables[x])
                         self.print_to_screen(str(BirbLang.calculate(" ".join(linesplit[1:]))) + "\n")
+
+                    elif len(linesplit) > 2 and list(linesplit[1])[0] != "\"":
+                        for x in range(1, len(linesplit)):
+                            if linesplit[x] in variables:
+                                linesplit[x] = str(variables[linesplit[x]])
+                        self.print_to_screen(str(BirbLang.condition(" ".join(linesplit[1:]))) + "\n")
 
                     else:
                         # Will try printing out the value if it were a valid data type
@@ -415,6 +436,12 @@ class BirbLang:
                             if x in variables:
                                 linesplit[linesplit.index(x)] = str(variables[x])
                         self.print_to_screen(BirbLang.calculate(" ".join(linesplit[1:])))
+
+                    elif len(linesplit) > 2 and list(linesplit[1])[0] != "\"":
+                        for x in range(1, len(linesplit)):
+                            if linesplit[x] in variables:
+                                linesplit[x] = str(variables[linesplit[x]])
+                        self.print_to_screen(BirbLang.condition(" ".join(linesplit[1:])))
 
                     else:
                         # Will try printing out the value if it were a valid data type
@@ -514,7 +541,7 @@ class BirbLang:
                             elif linesplit[5] == "float":
                                 variables[linesplit[2]] = float(variables[linesplit[2]])
                             elif linesplit[5] == "list":
-                                variables[linesplit[2]] = list(variables[linesplit[2]])
+                                variables[linesplit[2]] = list(str(variables[linesplit[2]]))
                             elif linesplit[5] == "complex":
                                 variables[linesplit[2]] = complex(variables[linesplit[2]])
                             elif linesplit[5] == "boolean":
