@@ -270,6 +270,20 @@ class BirbLang:
 
                 linesplit = code[line].split(" ")
 
+                for x in range(0, len(linesplit)-2):
+                    if linesplit[x] in variables:
+                        if type(variables[linesplit[x]]) is list and linesplit[x+1] == "at":
+                            if linesplit[x+2] in variables:
+                                if type(variables[linesplit[x+2]]) is int:
+                                    linesplit[x+2] = variables[linesplit[x+2]]
+                                else:
+                                    raise ValueError(f"Cannot find element at index {linesplit[x+2]}")
+                            try:
+                                linesplit[x] = variables[linesplit[x]][int(linesplit[x+2])]
+                                del linesplit[x+1:x+3]
+                            except IndexError:
+                                raise IndexError(f"Index out of range")
+
                 # Outputs element at specific index of array (if possible)
                 if re.match("^squawk .+ at [0-9.]+$", code[line]):
                     if linesplit[1] in variables:
@@ -294,8 +308,13 @@ class BirbLang:
                         for x in linesplit[1:]:
                             if x in variables:
                                 linesplit[linesplit.index(x)] = str(variables[x])
-                        print(BirbLang.calculate(" ".join(linesplit[1:])))
+                        print(str(BirbLang.calculate(" ".join(linesplit[1:]))) + "\n")
 
+                    elif len(linesplit) > 2 and list(linesplit[1])[0] != "\"":
+                        for x in range(1, len(linesplit)):
+                            if linesplit[x] in variables:
+                                linesplit[x] = str(variables[linesplit[x]])
+                        print(str(BirbLang.condition(" ".join(linesplit[1:]))) + "\n")
                     else:
                         # Will try printing out the value if it were a valid data type
                         try:
@@ -336,7 +355,11 @@ class BirbLang:
                             if x in variables:
                                 linesplit[linesplit.index(x)] = str(variables[x])
                         print(BirbLang.calculate(" ".join(linesplit[1:])), end="")
-
+                    elif len(linesplit) > 2 and list(linesplit[1])[0] != "\"":
+                        for x in range(1, len(linesplit)):
+                            if linesplit[x] in variables:
+                                linesplit[x] = str(variables[linesplit[x]])
+                        print(BirbLang.condition(" ".join(linesplit[1:])))
                     else:
                         # Will try printing out the value if it were a valid data type
                         try:
@@ -419,7 +442,7 @@ class BirbLang:
                             elif linesplit[5] == "float":
                                 variables[linesplit[2]] = float(variables[linesplit[2]])
                             elif linesplit[5] == "list":
-                                variables[linesplit[2]] = list(variables[linesplit[2]])
+                                variables[linesplit[2]] = list(str(variables[linesplit[2]]))
                             elif linesplit[5] == "complex":
                                 variables[linesplit[2]] = complex(variables[linesplit[2]])
                             elif linesplit[5] == "boolean":
@@ -688,7 +711,35 @@ class BirbLang:
 
 BirbLang_Program = BirbLang("""
 hatch egg
-squawk ultraunfloof 16 by 2
+new birb factorial is mimic
+breed of factorial is now int
+new birb result is 1
+chirp factorial
+chirp "! = "
+factorial is flying while it is floofier than 1
+    result is now megafloof it by factorial
+    unfloof factorial
+stop flying
+chirp result
+chirp " which has "
+new birb break is 0
+new birb index is -1
+new birb counter is 0
+breed of result is now list
+break is flying while it is not as floofy as 1
+    new birb temp is result at index
+    temp desires seed
+    eat seed if temp is as floofy as 0
+	floof counter
+	unfloof index
+    throw seed away
+	floof break
+    temp no longer desires seed
+stop flying
+chirp counter
+chirp " 0's"
 slep
+
+
 """)
 BirbLang_Program.evaluate()
