@@ -690,7 +690,7 @@ class BirbLang:
 
                         # Finds the loop's corresponding "stop flying" line and skips over to that line
                         else:
-                            del loop_index[-1]
+                            if loop_index: del loop_index[-1]
                             i = 1
                             while i != 0:
                                 line += 1
