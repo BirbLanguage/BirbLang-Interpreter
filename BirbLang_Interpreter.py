@@ -220,6 +220,44 @@ class BirbLang:
                     arr[x] = True
                 else:
                     arr[x] = False
+            elif re.match(".+ is as floofy as .+$", " ".join(arr[x])):
+                f = 0
+                while f in range(len(arr[x]) - 5):
+                    if arr[x][f] == "is" and arr[x][f + 1] == "as" and arr[x][f + 2] == "floofy" and arr[x][f + 3] == "as":
+                        arr[x][f + 4] = " ".join(arr[x][f + 4:])
+                        del arr[x][f + 5:]
+                        arr[x][0] = " ".join(arr[x][0:f])
+                        del arr[x][1:f]
+                        break
+                    f += 1
+                if "\"" not in arr[x][0]:
+                    arr[x][0] = f"\"{arr[x][0]}\""
+                if "\"" not in arr[x][5]:
+                    arr[x][5] = f"\"{arr[x][5]}\""
+                if ast.literal_eval(arr[x][0]) == ast.literal_eval(arr[x][5]):
+                    arr[x] = True
+                else:
+                    arr[x] = False
+            elif re.match(".+ is not as floofy as .+$", " ".join(arr[x])):
+                f = 0
+                while f in range(len(arr[x]) - 5):
+                    if arr[x][f] == "is" and arr[x][f + 1] == "as" and arr[x][f + 2] == "floofy" and arr[x][f + 3] == "as":
+                        arr[x][f + 5] = " ".join(arr[x][f + 5:])
+                        del arr[x][f + 6:]
+                        arr[x][0] = " ".join(arr[x][0:f])
+                        del arr[x][1:f]
+                        break
+                    f += 1
+                if "\"" not in arr[x][0]:
+                    arr[x][0] = f"\"{arr[x][0]}\""
+                if "\"" not in arr[x][6]:
+                    arr[x][6] = f"\"{arr[x][6]}\""
+                if ast.literal_eval(arr[x][0]) == ast.literal_eval(arr[x][5]):
+                    arr[x] = True
+                else:
+                    arr[x] = False
+            else:
+                return 69
 
         # Checks whether or not the entire conditional is true (if multiple conditions are found)
         if len(arr) > 2:
@@ -553,7 +591,8 @@ class BirbLang:
                                 linesplit[x] = str(variables[linesplit[x]])
 
                         # Checks the condition (to decide whether or not to run)
-                        if BirbLang.condition(" ".join(linesplit[4:])):
+                        evaluate_condition = self.condition(" ".join(linesplit[4:]))
+                        if evaluate_condition and evaluate_condition != 69:
                             if line not in loop_index:
                                 loop_index.append(line)
                             line += 1
@@ -600,6 +639,9 @@ class BirbLang:
                     if linesplit[0] in variables:
                         linesplit[0] = str(variables[linesplit[0]])
 
+                    if "\"" not in linesplit[0]:
+                        linesplit[0] = f"\"{linesplit[0]}\""
+
                     try:
                         in_condition.append(ast.literal_eval(linesplit[0]))
 
@@ -613,7 +655,9 @@ class BirbLang:
                                 linesplit[x] = str(in_condition[-1])
                             elif linesplit[x] in variables:
                                 linesplit[x] = str(variables[linesplit[x]])
-                        if self.condition(" ".join(linesplit[3:])):
+
+                        evaluate_condition = self.condition(" ".join(linesplit[3:]))
+                        if evaluate_condition and evaluate_condition != 69:
                             line += 1
                             del in_condition[-1]
                             continue
@@ -711,35 +755,11 @@ class BirbLang:
 
 BirbLang_Program = BirbLang("""
 hatch egg
-new birb factorial is mimic
-breed of factorial is now int
-new birb result is 1
-chirp factorial
-chirp "! = "
-factorial is flying while it is floofier than 1
-    result is now megafloof it by factorial
-    unfloof factorial
-stop flying
-chirp result
-chirp " which has "
-new birb break is 0
-new birb index is -1
-new birb counter is 0
-breed of result is now list
-break is flying while it is not as floofy as 1
-    new birb temp is result at index
-    temp desires seed
-    eat seed if temp is as floofy as 0
-	floof counter
-	unfloof index
-    throw seed away
-	floof break
-    temp no longer desires seed
-stop flying
-chirp counter
-chirp " 0's"
+new birb input is mimic
+input desires seed
+eat seed if input is as floofy as "A programming language is a formal language, which comprises a set of instructions that produce various kinds of output."
+    squawk "A programming language is a formal language, which comprises a set of instructions that produce various kinds of output."
+input no longer desires seed
 slep
-
-
 """)
 BirbLang_Program.evaluate()
